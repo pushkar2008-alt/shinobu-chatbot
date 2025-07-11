@@ -380,9 +380,12 @@
             if (synth.speaking) {
                 synth.cancel();
             }
-            const cleanedText = text.replace(/[\*_#`]/g, '');
+            // Remove common Markdown characters and emojis for cleaner speech
+            const emojiRegex = /(\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff])/g;
+            const cleanedText = text.replace(/[\*_#`]/g, '').replace(emojiRegex, '');
 
             const utterance = new SpeechSynthesisUtterance(cleanedText);
+            utterance.lang = currentSelectedLanguage; // Set the language for the utterance
 
             if (currentSelectedVoice) {
                 utterance.voice = currentSelectedVoice;
@@ -452,36 +455,61 @@
                 return;
             }
 
-            try {
-                const response = await fetch(geminiApiUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
+            const maxRetries = 3;
+            let retryCount = 0;
+            let delay = 1000; // Initial delay of 1 second
 
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+            while (retryCount < maxRetries) {
+                try {
+                    const response = await fetch(geminiApiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (response.status === 503) {
+                        // If 503, log and retry
+                        console.warn(`Gemini API returned 503. Retrying in ${delay / 1000} seconds... (Attempt ${retryCount + 1}/${maxRetries})`);
+                        retryCount++;
+                        await new Promise(res => setTimeout(res, delay));
+                        delay *= 2; // Exponential backoff
+                        continue; // Go to the next iteration of the loop
+                    }
+
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+                    }
+
+                    const result = await response.json();
+                    const text = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+                    if (text) {
+                        addMessage(text, 'ai');
+                        speak(text);
+                    } else {
+                        addMessage("Assistant: I couldn't get a clear response from the AI. Please try again.", 'ai');
+                        speak("I couldn't get a clear response from the AI. Please try again.");
+                        console.error("Unexpected API response structure or no text content:", result);
+                    }
+                    return; // Exit function if successful
+                } catch (error) {
+                    console.error("Error calling Gemini API:", error);
+                    if (retryCount < maxRetries - 1) {
+                        console.warn(`Error on attempt ${retryCount + 1}. Retrying...`);
+                        retryCount++;
+                        await new Promise(res => setTimeout(res, delay));
+                        delay *= 2;
+                    } else {
+                        addMessage(`Assistant: Sorry, I encountered an error: ${error.message}. Please try again later.`, 'ai');
+                        speak(`Sorry, I encountered an error: ${error.message}. Please try again later.`);
+                        return; // Exit after max retries
+                    }
                 }
-
-                const result = await response.json();
-                const text = result?.candidates?.[0]?.content?.parts?.[0]?.text;
-
-                if (text) {
-                    addMessage(text, 'ai');
-                    speak(text);
-                } else {
-                    addMessage("Assistant: I couldn't get a clear response from the AI. Please try again.", 'ai');
-                    speak("I couldn't get a clear response from the AI. Please try again.");
-                    console.error("Unexpected API response structure or no text content:", result);
-                }
-            } catch (error) {
-                console.error("Error calling Gemini API:", error);
-                addMessage(`Assistant: Sorry, I encountered an error: ${error.message}. Please try again later.`, 'ai');
-                speak(`Sorry, I encountered an error: ${error.message}. Please try again later.`);
-            } finally {
-                loadingIndicator.style.display = 'none';
             }
+            // This part is reached if all retries fail without a specific error caught
+            addMessage("Assistant: All retries failed. The AI is currently unavailable. Please try again later.", 'ai');
+            speak("All retries failed. The AI is currently unavailable. Please try again later.");
         }
 
         // --- Main Send Message Function ---
@@ -493,7 +521,9 @@
             userInput.value = '';
 
             const lowerCaseMessage = message.toLowerCase();
-            if (lowerCaseMessage.includes("hello") || lowerCaseMessage.includes("hi")) {
+            // Refined greeting logic
+            if (lowerCaseMessage === "hello" || lowerCaseMessage === "hi" || lowerCaseMessage === "hi there" || lowerCaseMessage === "hey" ||
+                lowerCaseMessage.startsWith("hello ") || lowerCaseMessage.startsWith("hi ") || lowerCaseMessage.startsWith("hey ")) {
                 const response = "Hi there!";
                 addMessage(response, 'ai');
                 speak(response);
