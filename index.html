@@ -86,7 +86,8 @@
             outline: none;
             font-size: 1rem;
             transition: border-color 0.2s;
-            min-width: 150px; /* Ensure input doesn't get too small */
+            /* Removed min-width to allow more flexibility on small screens */
+            width: 100%; /* Ensure it takes full width when wrapped */
         }
         .input-area input[type="text"]:focus {
             border-color: #3b82f6;
@@ -157,6 +158,14 @@
         .voice-select:focus, .language-select:focus {
             border-color: #3b82f6;
         }
+        .mic-unsupported-message {
+            display: none; /* Hidden by default */
+            text-align: center;
+            padding-top: 0.5rem;
+            font-size: 0.85rem;
+            color: #ef4444; /* Red color for error message */
+            width: 100%;
+        }
     </style>
 </head>
 <body class="flex items-center justify-center min-h-screen">
@@ -188,6 +197,10 @@
             <button id="mute-button" class="mute-button">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-volume-2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M23.31 1.69a16 16 0 0 1 0 22.62"/></svg>
             </button>
+            <!-- Message for unsupported microphone -->
+            <div id="mic-unsupported-message" class="mic-unsupported-message">
+                Microphone input not supported on this device/browser.
+            </div>
 
             <!-- Language Selection Dropdown -->
             <div class="language-select-container">
@@ -216,12 +229,13 @@
         const muteButton = document.getElementById('mute-button');
         const loadingIndicator = document.getElementById('loading-indicator');
         const voiceSelect = document.getElementById('voice-select');
-        const languageSelect = document.getElementById('language-select'); // New language select element
+        const languageSelect = document.getElementById('language-select');
+        const micUnsupportedMessage = document.getElementById('mic-unsupported-message'); // Reference to the new message div
 
         // Global state for mute and voice selection
         let isMuted = false;
-        let currentSelectedVoice = null; // Stores the selected SpeechSynthesisVoice object
-        let currentSelectedLanguage = 'en-US'; // Default to English (US)
+        let currentSelectedVoice = null;
+        let currentSelectedLanguage = 'en-US';
 
         // Gemini API configuration
         const apiKey = "AIzaSyAzKuU7MUJbYxfQB31vpR6QNiVU_7Yps7U"; // User's provided API key
@@ -235,9 +249,7 @@
         if (SpeechRecognition) {
             recognition = new SpeechRecognition();
             recognition.continuous = false;
-            recognition.lang = 'en-US'; // Speech recognition language remains English
-            // Note: If you want speech recognition to also change language,
-            // you'd update this `recognition.lang` based on `currentSelectedLanguage`.
+            recognition.lang = 'en-US';
 
             recognition.onstart = () => {
                 isRecording = true;
@@ -282,7 +294,8 @@
                 }
             });
         } else {
-            micButton.style.display = 'none';
+            micButton.style.display = 'none'; // Hide mic button if not supported
+            micUnsupportedMessage.style.display = 'block'; // Show the unsupported message
             console.warn("Web Speech API is not supported in this browser.");
         }
 
