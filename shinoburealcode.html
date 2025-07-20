@@ -1,541 +1,1179 @@
 <!DOCTYPE html>
+
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shinobu AI Assistant</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            /* Fallback background image if video doesn't load or isn't supported */
-            background-image: url('Add Your Photo.jpg'); 
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-            background-attachment: fixed;
-            
-            height: 100vh;
-            width: 100vw;
-            margin: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 0;
-            overflow: hidden; /* Prevent body scrollbars if video overflows slightly */
-        }
-        
-        /* Styles for the background video */
-        .background-video {
-            position: fixed;
-            right: 0;
-            bottom: 0;
-            min-width: 100%; 
-            min-height: 100%;
-            width: auto;
-            height: auto;
-            z-index: -1; /* Ensures it's behind other content */
-            object-fit: cover; /* Ensures the video covers the entire area */
-            background-size: cover; /* Fallback for browsers that don't support object-fit */
-        }
 
-        .chat-container {
-            max-width: 90vw;
-            width: 100%;
-            height: 95vh;
-            display: flex;
-            flex-direction: column;
-            border-radius: 1.5rem;
-            overflow: hidden;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-            background-color: rgba(255, 255, 255, 0.7); /* Adjusted transparency here */
-            position: relative; /* Ensure it's above the video */
-            z-index: 1; /* Ensure it's above the video */
-        }
-        .chat-messages {
-            flex-grow: 1;
-            overflow-y: auto;
-            padding: 1.5rem;
-            background-color: rgba(255, 255, 255, 0.7); /* Made transparent to match chat-container */
-            border-bottom: 1px solid #e2e8f0;
-            scroll-behavior: smooth;
-        }
-        .message-bubble {
-            max-width: 80%;
-            padding: 0.75rem 1rem;
-            border-radius: 1.25rem;
-            margin-bottom: 0.75rem;
-            line-height: 1.4;
-            word-wrap: break-word;
-        }
-        .user-message {
-            background-color: #3b82f6;
-            color: white;
-            align-self: flex-end;
-            margin-left: auto;
-            border-bottom-right-radius: 0.5rem;
-        }
-        .ai-message {
-            background-color: #e2e8f0;
-            color: #333;
-            align-self: flex-start;
-            margin-right: auto;
-            border-bottom-left-radius: 0.5rem;
-        }
-        .input-area {
-            background-color: rgba(248, 250, 252, 0.7); /* Made transparent to match chat-container */
-            padding: 1rem 1.5rem;
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            gap: 0.75rem;
-            border-top: 1px solid #e2e8f0;
-        }
-        .input-area input[type="text"] {
-            flex-grow: 1;
-            padding: 0.75rem 1rem;
-            border-radius: 1.5rem;
-            border: 1px solid #cbd5e1;
-            outline: none;
-            font-size: 1rem;
-            transition: border-color 0.2s;
-            width: 100%;
-        }
-        .input-area input[type="text"]:focus {
-            border-color: #3b82f6;
-        }
-        .input-area button {
-            background-color: #3b82f6;
-            color: white;
-            padding: 0.75rem 1rem;
-            border-radius: 1.5rem;
-            border: none;
-            cursor: pointer;
-            font-size: 1rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: background-color 0.2s, transform 0.1s;
-        }
-        .input-area button:hover {
-            background-color: #2563eb;
-            transform: translateY(-1px);
-        }
-        .input-area button:active {
-            transform: translateY(0);
-        }
-        .mic-button {
-            background-color: #ef4444;
-        }
-        .mic-button:hover {
-            background-color: #dc2626;
-        }
-        .mic-button.recording {
-            background-color: #10b981;
-        }
-        .mute-button {
-            background-color: #60a5fa;
-        }
-        .mute-button:hover {
-            background-color: #3b82f6;
-        }
-        .mute-button.muted {
-            background-color: #94a3b8;
-        }
-        .mute-button.muted:hover {
-            background-color: #64748b;
-        }
-        .language-select-container {
-            width: 100%;
-            margin-top: 0.5rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        .language-select {
-            flex-grow: 1;
-            padding: 0.75rem 1rem;
-            border-radius: 1.5rem;
-            border: 1px solid #cbd5e1;
-            outline: none;
-            font-size: 0.9rem;
-            background-color: #ffffff;
-            appearance: none;
-            background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23000000%22%20d%3D%22M287%2C197.3L159.2%2C69.5c-3.2-3.2-8.4-3.2-11.6%2C0L5.4%2C197.3c-3.2%2C3.2-3.2%2C8.4%2C0%2C11.6l11.6%2C11.6c3.2%2C3.2%2C8.4%2C3.2%2C11.6%2C0l118.8-118.8l118.8%2C118.8c3.2%2C3.2%2C8.4%2C3.2%2C11.6%2C0l11.6-11.6C290.2%2C205.7%2C290.2%2C200.5%2C287%2C197.3z%22%2F%3E%3C%2Fsvg%3E');
-            background-repeat: no-repeat;
-            background-position: right 0.7rem top 50%;
-            background-size: 0.65rem auto;
-            padding-right: 2.5rem;
-        }
-        .language-select:focus {
-            border-color: #3b82f6;
-        }
-        .mic-unsupported-message {
-            display: none;
-            text-align: center;
-            padding-top: 0.5rem;
-            font-size: 0.85rem;
-            color: #ef4444;
-            width: 100%;
-        }
-    </style>
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Shinobu AI Assistant</title>
+
+    <!-- Tailwind CSS CDN for easy styling -->
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Inter font from Google Fonts -->
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <!-- Lucide Icons for the microphone and speaker -->
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+
+        body {
+
+            font-family: 'Inter', sans-serif;
+
+            /* Custom background image */
+
+            background-image: url('Add Your Photo.jpg'); /* Ensure this file is in the same directory */
+
+            background-size: cover; /* Cover the entire background */
+
+            background-position: center; /* Center the image */
+
+            background-repeat: no-repeat; /* Do not repeat the image */
+
+            background-attachment: fixed; /* Keep background fixed when scrolling */
+
+            
+
+            height: 100vh; /* Make body fill viewport height */
+
+            width: 100vw; /* Make body fill viewport width */
+
+            margin: 0; /* Remove default body margin */
+
+            display: flex; /* Use flexbox for centering */
+
+            align-items: center; /* Center vertically */
+
+            justify-content: center; /* Center horizontally */
+
+            padding: 0; /* Remove default body padding */
+
+        }
+
+        .chat-container {
+
+            max-width: 90vw; /* Increased max-width for wider screen */
+
+            width: 100%; /* Ensure it takes full width within max-width */
+
+            height: 95vh; /* Make it take almost full viewport height */
+
+            display: flex;
+
+            flex-direction: column;
+
+            border-radius: 1.5rem; /* More rounded corners */
+
+            overflow: hidden;
+
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); /* Soft shadow */
+
+            background-color: rgba(255, 255, 255, 0.9); /* Slightly transparent white background for readability */
+
+        }
+
+        .chat-messages {
+
+            flex-grow: 1;
+
+            overflow-y: auto;
+
+            padding: 1.5rem;
+
+            background-color: #ffffff;
+
+            border-bottom: 1px solid #e2e8f0;
+
+            scroll-behavior: smooth; /* Smooth scrolling for new messages */
+
+        }
+
+        .message-bubble {
+
+            max-width: 80%;
+
+            padding: 0.75rem 1rem;
+
+            border-radius: 1.25rem; /* Rounded bubbles */
+
+            margin-bottom: 0.75rem;
+
+            line-height: 1.4;
+
+            word-wrap: break-word;
+
+        }
+
+        .user-message {
+
+            background-color: #3b82f6; /* Blue for user */
+
+            color: white;
+
+            align-self: flex-end;
+
+            margin-left: auto; /* Push to right */
+
+            border-bottom-right-radius: 0.5rem; /* Sharper corner on one side */
+
+        }
+
+        .ai-message {
+
+            background-color: #e2e8f0; /* Light gray for AI */
+
+            color: #333;
+
+            align-self: flex-start;
+
+            margin-right: auto; /* Push to left */
+
+            border-bottom-left-radius: 0.5rem; /* Sharper corner on one side */
+
+        }
+
+        .input-area {
+
+            background-color: #f8fafc; /* Lighter gray for input area */
+
+            padding: 1rem 1.5rem;
+
+            display: flex;
+
+            flex-wrap: wrap; /* Allow items to wrap */
+
+            align-items: center;
+
+            gap: 0.75rem;
+
+            border-top: 1px solid #e2e8f0;
+
+        }
+
+        .input-area input[type="text"] {
+
+            flex-grow: 1;
+
+            padding: 0.75rem 1rem;
+
+            border-radius: 1.5rem;
+
+            border: 1px solid #cbd5e1;
+
+            outline: none;
+
+            font-size: 1rem;
+
+            transition: border-color 0.2s;
+
+            /* Removed min-width to allow more flexibility on small screens */
+
+            width: 100%; /* Ensure it takes full width when wrapped */
+
+        }
+
+        .input-area input[type="text"]:focus {
+
+            border-color: #3b82f6;
+
+        }
+
+        .input-area button {
+
+            background-color: #3b82f6;
+
+            color: white;
+
+            padding: 0.75rem 1rem;
+
+            border-radius: 1.5rem;
+
+            border: none;
+
+            cursor: pointer;
+
+            font-size: 1rem;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            transition: background-color 0.2s, transform 0.1s;
+
+        }
+
+        .input-area button:hover {
+
+            background-color: #2563eb;
+
+            transform: translateY(-1px);
+
+        }
+
+        .input-area button:active {
+
+            transform: translateY(0);
+
+        }
+
+        .mic-button {
+
+            background-color: #ef4444; /* Red for mic */
+
+        }
+
+        .mic-button:hover {
+
+            background-color: #dc2626;
+
+        }
+
+        .mic-button.recording {
+
+            background-color: #10b981; /* Green when recording */
+
+        }
+
+        .mute-button {
+
+            background-color: #60a5fa; /* Light blue for mute */
+
+        }
+
+        .mute-button:hover {
+
+            background-color: #3b82f6;
+
+        }
+
+        .mute-button.muted {
+
+            background-color: #94a3b8; /* Gray when muted */
+
+        }
+
+        .mute-button.muted:hover {
+
+            background-color: #64748b;
+
+        }
+
+        .voice-select-container, .language-select-container {
+
+            width: 100%; /* Take full width on a new line */
+
+            margin-top: 0.5rem;
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 0.5rem;
+
+        }
+
+        .voice-select, .language-select {
+
+            flex-grow: 1;
+
+            padding: 0.75rem 1rem;
+
+            border-radius: 1.5rem;
+
+            border: 1px solid #cbd5e1;
+
+            outline: none;
+
+            font-size: 0.9rem; /* Slightly smaller font for dropdown */
+
+            background-color: #ffffff;
+
+            appearance: none; /* Remove default arrow */
+
+            background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23000000%22%20d%3D%22M287%2C197.3L159.2%2C69.5c-3.2-3.2-8.4-3.2-11.6%2C0L5.4%2C197.3c-3.2%2C3.2-3.2%2C8.4%2C0%2C11.6l11.6%2C11.6c3.2%2C3.2%2C8.4%2C3.2%2C11.6%2C0l118.8-118.8l118.8%2C118.8c3.2%2C3.2%2C8.4%2C3.2%2C11.6%2C0l11.6-11.6C290.2%2C205.7%2C290.2%2C200.5%2C287%2C197.3z%22%2F%3E%3C%2Fsvg%3E');
+
+            background-repeat: no-repeat;
+
+            background-position: right 0.7rem top 50%;
+
+            background-size: 0.65rem auto;
+
+            padding-right: 2.5rem; /* Make space for the custom arrow */
+
+        }
+
+        .voice-select:focus, .language-select:focus {
+
+            border-color: #3b82f6;
+
+        }
+
+        .mic-unsupported-message {
+
+            display: none; /* Hidden by default */
+
+            text-align: center;
+
+            padding-top: 0.5rem;
+
+            font-size: 0.85rem;
+
+            color: #ef4444; /* Red color for error message */
+
+            width: 100%;
+
+        }
+
+    </style>
+
 </head>
+
 <body class="flex items-center justify-center min-h-screen">
-    <video autoplay loop muted playsinline class="background-video" poster="Add Your Photo.jpg" onerror="console.error('Video failed to load. Please ensure the video file is in the correct path and is not corrupted.');">
-        <source src="background-video.mp4" type="video/mp4">
-        Your browser does not support the video tag.
-    </video>
 
-    <div class="chat-container bg-white shadow-lg rounded-3xl">
-        <div class="bg-gradient-to-r from-blue-500 to-indigo-600 text-white p-4 text-center text-2xl font-bold rounded-t-3xl shadow-md">
-            Shinobu AI Assistant
-        </div>
+    <div class="chat-container bg-white shadow-lg rounded-3xl">
 
-        <div id="chat-messages" class="chat-messages flex flex-col">
-            </div>
+        <!-- Chat Header -->
 
-        <div id="loading-indicator" class="loading-indicator">
-            Shinobu is thinking...
-        </div>
+        <div class="bg-gradient-to-r from-blue-500 to-indigo-600 text-white p-4 text-center text-2xl font-bold rounded-t-3xl shadow-md">
 
-        <div class="input-area">
-            <input type="text" id="user-input" placeholder="Type your message...">
-            <button id="send-button">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-send"><path d="m22 2-7 20-4-9-9-4 20-7Z"/><path d="M15 9l-6 6"/></svg>
-            </button>
-            <button id="mic-button" class="mic-button">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-mic"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
-            </button>
-            <button id="mute-button" class="mute-button">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-volume-2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M23.31 1.69a16 16 0 0 1 0 22.62"/></svg>
-            </button>
-            <div id="mic-unsupported-message" class="mic-unsupported-message">
-                Microphone input not supported on this device/browser.
-            </div>
+            Shinobu AI Assistant
 
-            <div class="language-select-container">
-                <label for="language-select" class="sr-only">Select Language:</label>
-                <select id="language-select" class="language-select">
-                    </select>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        // Get references to HTML elements
-        const chatMessages = document.getElementById('chat-messages');
-        const userInput = document.getElementById('user-input');
-        const sendButton = document.getElementById('send-button');
-        const micButton = document.getElementById('mic-button');
-        const muteButton = document.getElementById('mute-button');
-        const loadingIndicator = document.getElementById('loading-indicator');
-        const languageSelect = document.getElementById('language-select');
-        const micUnsupportedMessage = document.getElementById('mic-unsupported-message');
-
-        // Global state for mute and voice selection
-        let isMuted = false;
-        let currentSelectedVoice = null;
-        let currentSelectedLanguage = 'en-US'; // Default to English (US)
-        let chatHistory = []; // Array to store chat messages
-
-        // --- Frontend API Endpoint (points to your Flask backend) ---
-        // IMPORTANT: If running locally, keep this as http://127.0.0.1:5000/chat
-        // If you deploy your Flask app, you'll replace this with your deployed URL (e.g., https://your-app-name.render.com/chat)
-        const BACKEND_CHAT_URL = 'http://127.0.0.1:5000/chat'; 
-
-        // --- Speech Recognition (for listening to user) ---
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        let recognition;
-        let isRecording = false;
-
-        if (SpeechRecognition) {
-            recognition = new SpeechRecognition();
-            recognition.continuous = false;
-            recognition.lang = 'en-US';
-
-            recognition.onstart = () => {
-                isRecording = true;
-                micButton.classList.add('recording');
-                micButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-mic-off"><line x1="2" x2="22" y1="2" y2="22"/><path d="M9 9v3a3 3 0 0 0 6 0V9"/><path d="M16 12a7 7 0 0 1-13.999 1.5"/><path d="M18 8a7 7 0 0 1 .5 4"/><line x1="12" x2="12" y1="19" y2="22"/></svg>';
-                userInput.placeholder = "Listening...";
-                userInput.disabled = true;
-                sendButton.disabled = true;
-            };
-
-            recognition.onresult = (event) => {
-                const transcript = event.results[0][0].transcript;
-                userInput.value = transcript;
-                sendMessage();
-            };
-
-            recognition.onend = () => {
-                isRecording = false;
-                micButton.classList.remove('recording');
-                micButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-mic"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>';
-                userInput.placeholder = "Type your message...";
-                userInput.disabled = false;
-                sendButton.disabled = false;
-            };
-
-            recognition.onerror = (event) => {
-                console.error('Speech recognition error:', event.error);
-                addMessage("Assistant: Sorry, I had trouble understanding your voice. Please try typing or speak clearly.", 'ai');
-                isRecording = false;
-                micButton.classList.remove('recording');
-                micButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-mic"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>';
-                userInput.placeholder = "Type your message...";
-                userInput.disabled = false;
-                sendButton.disabled = false;
-            };
-
-            micButton.addEventListener('click', () => {
-                if (isRecording) {
-                    recognition.stop();
-                } else {
-                    recognition.start();
-                }
-            });
-        } else {
-            micButton.style.display = 'none';
-            micUnsupportedMessage.style.display = 'block';
-            console.warn("Web Speech API is not supported in this browser.");
-        }
-
-        // --- Text-to-Speech (for AI speaking) ---
-        const synth = window.speechSynthesis;
-        let allVoices = [];
-
-        function populateLanguageAndVoiceLists() {
-            allVoices = synth.getVoices().sort((a, b) => a.name.localeCompare(b.name));
-            
-            // Populate Language Dropdown
-            const uniqueLanguages = [...new Set(allVoices.map(voice => voice.lang))];
-            languageSelect.innerHTML = '';
-            uniqueLanguages.forEach(langCode => {
-                const option = document.createElement('option');
-                option.value = langCode;
-                option.textContent = new Intl.DisplayNames(['en'], { type: 'language' }).of(langCode) || langCode;
-                if (langCode === currentSelectedLanguage) {
-                    option.selected = true;
-                }
-                languageSelect.appendChild(option);
-            });
-
-            // Set the specific voice after languages are populated
-            setSpecificVoice();
-        }
-
-        function setSpecificVoice() {
-            currentSelectedVoice = null;
-            const preferredVoiceName = "Microsoft Ava Online (Natural) - English (United States)";
-            
-            const foundPreferredVoice = allVoices.find(voice => 
-                voice.name === preferredVoiceName && voice.lang === currentSelectedLanguage
-            );
-
-            if (foundPreferredVoice) {
-                currentSelectedVoice = foundPreferredVoice;
-            } else {
-                const fallbackVoiceForLang = allVoices.find(voice => voice.lang === currentSelectedLanguage);
-                if (fallbackVoiceForLang) {
-                    currentSelectedVoice = fallbackVoiceForLang;
-                } else if (allVoices.length > 0) {
-                    currentSelectedVoice = allVoices[0];
-                }
-            }
-
-            if (currentSelectedVoice) {
-                console.log("Voice set to:", currentSelectedVoice.name, "for language:", currentSelectedLanguage);
-            } else {
-                console.warn("No suitable voice found for the selected language or default fallback.");
-            }
-        }
-
-        populateLanguageAndVoiceLists();
-        if (synth.onvoiceschanged !== undefined) {
-            synth.onvoiceschanged = populateLanguageAndVoiceLists;
-        }
-
-        languageSelect.addEventListener('change', () => {
-            currentSelectedLanguage = languageSelect.value;
-            setSpecificVoice();
-            console.log("Language changed to:", currentSelectedLanguage);
-        });
-
-        function speak(text) {
-            if (isMuted) {
-                synth.cancel();
-                return;
-            }
-            if (synth.speaking) {
-                synth.cancel();
-            }
-            const emojiRegex = /(\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff])/g;
-            const cleanedText = text.replace(/[\*_#`]/g, '').replace(emojiRegex, '');
-
-            const utterance = new SpeechSynthesisUtterance(cleanedText);
-            utterance.lang = currentSelectedLanguage;
-
-            if (currentSelectedVoice) {
-                utterance.voice = currentSelectedVoice;
-            } else {
-                const fallbackVoice = allVoices.find(voice => voice.lang === currentSelectedLanguage) || allVoices[0];
-                if (fallbackVoice) {
-                    utterance.voice = fallbackVoice;
-                }
-            }
-            utterance.pitch = 1;
-            utterance.rate = 1;
-            synth.speak(utterance);
-        }
-
-        // --- Mute/Unmute Functionality ---
-        muteButton.addEventListener('click', () => {
-            isMuted = !isMuted;
-            if (isMuted) {
-                muteButton.classList.add('muted');
-                muteButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-volume-x"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="22" x2="16" y1="9" y2="15"/><line x1="16" x2="22" y1="9" y2="15"/></svg>';
-                synth.cancel();
-            } else {
-                muteButton.classList.remove('muted');
-                muteButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-volume-2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M23.31 1.69a16 16 0 0 1 0 22.62"/></svg>';
-            }
-        });
-
-        // --- Chat Message Management ---
-        function addMessage(text, sender) {
-            const messageDiv = document.createElement('div');
-            messageDiv.classList.add('message-bubble');
-            if (sender === 'user') {
-                messageDiv.classList.add('user-message');
-            } else {
-                messageDiv.classList.add('ai-message');
-            }
-            messageDiv.textContent = text;
-            chatMessages.appendChild(messageDiv);
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-
-            // Add message to history
-            chatHistory.push({ text: text, sender: sender });
-            saveChatHistory(); // Save history every time a message is added
-        }
-
-        // --- Save/Load Chat History ---
-        const CHAT_HISTORY_KEY = 'shinobuChatHistory';
-
-        function saveChatHistory() {
-            try {
-                localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(chatHistory));
-                console.log("Chat history saved to localStorage.");
-            } catch (e) {
-                console.error("Error saving chat history to localStorage:", e);
-                // Handle cases where localStorage might be full or unavailable
-                alert("Your browser's storage is full. Chat history may not be saved.");
-            }
-        }
-
-        function loadChatHistory() {
-            try {
-                const storedHistory = localStorage.getItem(CHAT_HISTORY_KEY);
-                if (storedHistory) {
-                    chatHistory = JSON.parse(storedHistory);
-                    console.log("Chat history loaded from localStorage.");
-                    // Re-render messages from history
-                    chatHistory.forEach(msg => {
-                        const messageDiv = document.createElement('div');
-                        messageDiv.classList.add('message-bubble');
-                        if (msg.sender === 'user') {
-                            messageDiv.classList.add('user-message');
-                        } else {
-                            messageDiv.classList.add('ai-message');
-                        }
-                        messageDiv.textContent = msg.text;
-                        chatMessages.appendChild(messageDiv);
-                    });
-                    chatMessages.scrollTop = chatMessages.scrollHeight;
-                } else {
-                    console.log("No chat history found in localStorage.");
-                }
-            } catch (e) {
-                console.error("Error loading chat history from localStorage:", e);
-                // If there's an error parsing, clear potentially corrupted data
-                localStorage.removeItem(CHAT_HISTORY_KEY);
-                chatHistory = []; // Reset history
-            }
-        }
+        </div>
 
 
-        // --- Send Message to Python Backend ---
-        async function sendMessage() {
-            const message = userInput.value.trim();
-            if (message === '') return;
 
-            addMessage(message, 'user');
-            userInput.value = '';
-            loadingIndicator.style.display = 'block';
-            chatMessages.scrollTop = chatMessages.scrollHeight;
+        <!-- Chat Messages Display Area -->
 
-            try {
-                const response = await fetch(BACKEND_CHAT_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ message: message })
-                });
+        <div id="chat-messages" class="chat-messages flex flex-col">
 
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(`Backend error! Status: ${response.status}, Message: ${errorData.error || 'Unknown error'}`);
-                }
+            <!-- Messages will be appended here by JavaScript -->
 
-                const result = await response.json();
-                const aiResponseText = result.response;
+        </div>
 
-                if (aiResponseText) {
-                    addMessage(aiResponseText, 'ai');
-                    speak(aiResponseText);
-                } else {
-                    addMessage("Assistant: I couldn't get a clear response from the AI. Please try again.", 'ai');
-                    speak("I couldn't get a clear response from the AI. Please try again.");
-                    console.error("Unexpected backend response structure or no text content:", result);
-                }
-            } catch (error) {
-                console.error("Error communicating with backend:", error);
-                addMessage(`Assistant: Sorry, I encountered an error communicating with the backend: ${error.message}. Please ensure the Python server is running.`, 'ai');
-                speak(`Sorry, I encountered an error communicating with the backend: ${error.message}. Please ensure the Python server is running.`);
-            } finally {
-                loadingIndicator.style.display = 'none';
-            }
-        }
 
-        // --- Event Listeners ---
-        sendButton.addEventListener('click', sendMessage);
-        userInput.addEventListener('keypress', (event) => {
-            if (event.key === 'Enter') {
-                sendMessage();
-            }
-        });
 
-        // --- Initial setup ---
-        // Load chat history when the page loads
-        document.addEventListener('DOMContentLoaded', () => {
-            loadChatHistory();
-            // Only show the initial greeting if there's no chat history
-            if (chatHistory.length === 0) {
-                setTimeout(() => {
-                    const initialGreeting = "Hello! I'm Shinobu. How can I help you today? You can type or click the microphone to speak.";
-                    addMessage(initialGreeting, 'ai');
-                    speak(initialGreeting);
-                }, 500); // 500ms delay
-            } else {
-                // If history exists, scroll to the bottom immediately and don't speak initial greeting
-                chatMessages.scrollTop = chatMessages.scrollHeight;
-            }
-        });
-    </script>
+        <!-- Loading Indicator -->
+
+        <div id="loading-indicator" class="loading-indicator">
+
+            Shinobu is thinking...
+
+        </div>
+
+
+
+        <!-- Input Area -->
+
+        <div class="input-area">
+
+            <input type="text" id="user-input" placeholder="Type your message...">
+
+            <button id="send-button">
+
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-send"><path d="m22 2-7 20-4-9-9-4 20-7Z"/><path d="M15 9l-6 6"/></svg>
+
+            </button>
+
+            <button id="mic-button" class="mic-button">
+
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-mic"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
+
+            </button>
+
+            <button id="mute-button" class="mute-button">
+
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-volume-2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M23.31 1.69a16 16 0 0 1 0 22.62"/></svg>
+
+            </button>
+
+            <!-- Message for unsupported microphone -->
+
+            <div id="mic-unsupported-message" class="mic-unsupported-message">
+
+                Microphone input not supported on this device/browser.
+
+            </div>
+
+
+
+            <!-- Language Selection Dropdown -->
+
+            <div class="language-select-container">
+
+                <label for="language-select" class="sr-only">Select Language:</label>
+
+                <select id="language-select" class="language-select">
+
+                    <!-- Options will be populated by JavaScript -->
+
+                </select>
+
+            </div>
+
+
+
+            <!-- Voice Selection Dropdown -->
+
+            <div class="voice-select-container">
+
+                <label for="voice-select" class="sr-only">Select Voice:</label>
+
+                <select id="voice-select" class="voice-select">
+
+                    <!-- Options will be populated by JavaScript -->
+
+                </select>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <script>
+
+        // Get references to HTML elements
+
+        const chatMessages = document.getElementById('chat-messages');
+
+        const userInput = document.getElementById('user-input');
+
+        const sendButton = document.getElementById('send-button');
+
+        const micButton = document.getElementById('mic-button');
+
+        const muteButton = document.getElementById('mute-button');
+
+        const loadingIndicator = document.getElementById('loading-indicator');
+
+        const voiceSelect = document.getElementById('voice-select');
+
+        const languageSelect = document.getElementById('language-select');
+
+        const micUnsupportedMessage = document.getElementById('mic-unsupported-message'); // Reference to the new message div
+
+
+
+        // Global state for mute and voice selection
+
+        let isMuted = false;
+
+        let currentSelectedVoice = null;
+
+        let currentSelectedLanguage = 'en-US';
+
+
+
+        // Gemini API configuration
+
+        const apiKey = "AIzaSyAzKuU7MUJbYxfQB31vpR6QNiVU_7Yps7U"; // User's provided API key
+
+        const geminiApiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+
+
+        // --- Speech Recognition (for listening to user) ---
+
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+        let recognition;
+
+        let isRecording = false;
+
+
+
+        if (SpeechRecognition) {
+
+            recognition = new SpeechRecognition();
+
+            recognition.continuous = false;
+
+            recognition.lang = 'en-US';
+
+
+
+            recognition.onstart = () => {
+
+                isRecording = true;
+
+                micButton.classList.add('recording');
+
+                micButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-mic-off"><line x1="2" x2="22" y1="2" y2="22"/><path d="M9 9v3a3 3 0 0 0 6 0V9"/><path d="M16 12a7 7 0 0 1-13.999 1.5"/><path d="M18 8a7 7 0 0 1 .5 4"/><line x1="12" x2="12" y1="19" y2="22"/></svg>';
+
+                userInput.placeholder = "Listening...";
+
+                userInput.disabled = true;
+
+                sendButton.disabled = true;
+
+            };
+
+
+
+            recognition.onresult = (event) => {
+
+                const transcript = event.results[0][0].transcript;
+
+                userInput.value = transcript;
+
+                sendMessage();
+
+            };
+
+
+
+            recognition.onend = () => {
+
+                isRecording = false;
+
+                micButton.classList.remove('recording');
+
+                micButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-mic"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>';
+
+                userInput.placeholder = "Type your message...";
+
+                userInput.disabled = false;
+
+                sendButton.disabled = false;
+
+            };
+
+
+
+            recognition.onerror = (event) => {
+
+                console.error('Speech recognition error:', event.error);
+
+                addMessage("Assistant: Sorry, I had trouble understanding your voice. Please try typing or speak clearly.", 'ai');
+
+                isRecording = false;
+
+                micButton.classList.remove('recording');
+
+                micButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-mic"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>';
+
+                userInput.placeholder = "Type your message...";
+
+                userInput.disabled = false;
+
+                sendButton.disabled = false;
+
+            };
+
+
+
+            micButton.addEventListener('click', () => {
+
+                if (isRecording) {
+
+                    recognition.stop();
+
+                } else {
+
+                    recognition.start();
+
+                }
+
+            });
+
+        } else {
+
+            micButton.style.display = 'none'; // Hide mic button if not supported
+
+            micUnsupportedMessage.style.display = 'block'; // Show the unsupported message
+
+            console.warn("Web Speech API is not supported in this browser.");
+
+        }
+
+
+
+        // --- Text-to-Speech (for AI speaking) ---
+
+        const synth = window.speechSynthesis;
+
+        let allVoices = []; // Store all voices
+
+
+
+        function populateLanguageAndVoiceLists() {
+
+            allVoices = synth.getVoices().sort((a, b) => a.name.localeCompare(b.name));
+
+            
+
+            // Populate Language Dropdown
+
+            const uniqueLanguages = [...new Set(allVoices.map(voice => voice.lang))];
+
+            languageSelect.innerHTML = ''; // Clear existing language options
+
+            uniqueLanguages.forEach(langCode => {
+
+                const option = document.createElement('option');
+
+                option.value = langCode;
+
+                // Display a more readable language name if possible, otherwise just the code
+
+                option.textContent = new Intl.DisplayNames(['en'], { type: 'language' }).of(langCode) || langCode;
+
+                if (langCode === currentSelectedLanguage) {
+
+                    option.selected = true;
+
+                }
+
+                languageSelect.appendChild(option);
+
+            });
+
+
+
+            // Now populate Voice Dropdown based on selected language
+
+            populateVoiceList();
+
+        }
+
+
+
+        function populateVoiceList() {
+
+            const filteredVoices = allVoices.filter(voice => voice.lang === currentSelectedLanguage);
+
+            voiceSelect.innerHTML = ''; // Clear existing voice options
+
+            currentSelectedVoice = null; // Reset selected voice
+
+
+
+            for (let i = 0; i < filteredVoices.length; i++) {
+
+                const voice = filteredVoices[i];
+
+                const option = document.createElement('option');
+
+                option.textContent = voice.name;
+
+                option.value = voice.name;
+
+
+
+                // Attempt to set a default female voice for the current language
+
+                if (voice.lang === currentSelectedLanguage && (
+
+                    voice.name.toLowerCase().includes('female') ||
+
+                    voice.name.toLowerCase().includes('woman') ||
+
+                    voice.name.toLowerCase().includes('zira') ||
+
+                    voice.name.toLowerCase().includes('karen') ||
+
+                    voice.name.toLowerCase().includes('ava') ||
+
+                    voice.name.toLowerCase().includes('samantha')
+
+                ) && !currentSelectedVoice) {
+
+                    option.selected = true;
+
+                    currentSelectedVoice = voice;
+
+                } else if (voice.default && !currentSelectedVoice) { // Fallback to default voice in this language
+
+                    option.selected = true;
+
+                    currentSelectedVoice = voice;
+
+                }
+
+                voiceSelect.appendChild(option);
+
+            }
+
+
+
+            // If no specific voice was selected by the logic above, and there are voices in this language, pick the first one
+
+            if (!currentSelectedVoice && filteredVoices.length > 0) {
+
+                currentSelectedVoice = filteredVoices[0];
+
+                voiceSelect.value = filteredVoices[0].name;
+
+            } else if (filteredVoices.length === 0) {
+
+                // If no voices for the selected language, clear currentSelectedVoice
+
+                currentSelectedVoice = null;
+
+            }
+
+        }
+
+
+
+        // Populate voices and languages immediately and listen for changes
+
+        populateLanguageAndVoiceLists();
+
+        if (synth.onvoiceschanged !== undefined) {
+
+            synth.onvoiceschanged = populateLanguageAndVoiceLists;
+
+        }
+
+
+
+        // Event listener for language selection change
+
+        languageSelect.addEventListener('change', () => {
+
+            currentSelectedLanguage = languageSelect.value;
+
+            populateVoiceList(); // Repopulate voices for the new language
+
+            console.log("Language changed to:", currentSelectedLanguage);
+
+        });
+
+
+
+        // Event listener for voice selection change
+
+        voiceSelect.addEventListener('change', () => {
+
+            const selectedVoiceName = voiceSelect.value;
+
+            currentSelectedVoice = allVoices.find(voice => voice.name === selectedVoiceName && voice.lang === currentSelectedLanguage);
+
+            if (currentSelectedVoice) {
+
+                console.log("Voice changed to:", currentSelectedVoice.name);
+
+            }
+
+        });
+
+
+
+        function speak(text) {
+
+            if (isMuted) {
+
+                synth.cancel();
+
+                return;
+
+            }
+
+            if (synth.speaking) {
+
+                synth.cancel();
+
+            }
+
+            // Remove common Markdown characters and emojis for cleaner speech
+
+            const emojiRegex = /(\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff])/g;
+
+            const cleanedText = text.replace(/[\*_#`]/g, '').replace(emojiRegex, '');
+
+
+
+            const utterance = new SpeechSynthesisUtterance(cleanedText);
+
+            utterance.lang = currentSelectedLanguage; // Set the language for the utterance
+
+
+
+            if (currentSelectedVoice) {
+
+                utterance.voice = currentSelectedVoice;
+
+            } else {
+
+                // Fallback if no specific voice is selected (should be rare with proper initialization)
+
+                const fallbackVoice = allVoices.find(voice => voice.lang === currentSelectedLanguage) || allVoices[0];
+
+                if (fallbackVoice) {
+
+                    utterance.voice = fallbackVoice;
+
+                }
+
+            }
+
+            utterance.pitch = 1;
+
+            utterance.rate = 1;
+
+            synth.speak(utterance);
+
+        }
+
+
+
+        // --- Mute/Unmute Functionality ---
+
+        muteButton.addEventListener('click', () => {
+
+            isMuted = !isMuted;
+
+            if (isMuted) {
+
+                muteButton.classList.add('muted');
+
+                muteButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-volume-x"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="22" x2="16" y1="9" y2="15"/><line x1="16" x2="22" y1="9" y2="15"/></svg>';
+
+                synth.cancel();
+
+            } else {
+
+                muteButton.classList.remove('muted');
+
+                muteButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-volume-2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M23.31 1.69a16 16 0 0 1 0 22.62"/></svg>';
+
+            }
+
+        });
+
+
+
+        // --- Chat Message Management ---
+
+        function addMessage(text, sender) {
+
+            const messageDiv = document.createElement('div');
+
+            messageDiv.classList.add('message-bubble');
+
+            if (sender === 'user') {
+
+                messageDiv.classList.add('user-message');
+
+            } else {
+
+                messageDiv.classList.add('ai-message');
+
+            }
+
+            messageDiv.textContent = text;
+
+            chatMessages.appendChild(messageDiv);
+
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+
+        }
+
+
+
+        // --- Gemini API Call ---
+
+        async function getGeminiResponse(prompt) {
+
+            loadingIndicator.style.display = 'block';
+
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+
+
+
+            let chatHistory = [];
+
+            chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+
+
+
+            const payload = {
+
+                contents: chatHistory,
+
+                generationConfig: {
+
+                    temperature: 0.7,
+
+                    topK: 40,
+
+                    topP: 0.95,
+
+                    maxOutputTokens: 500
+
+                }
+
+            };
+
+
+
+            if (!apiKey || apiKey === "") {
+
+                const errorMessage = "Error: Gemini API key is not set. Please paste your key into the code.";
+
+                addMessage(`Assistant: ${errorMessage}`, 'ai');
+
+                speak(errorMessage);
+
+                loadingIndicator.style.display = 'none';
+
+                console.error(errorMessage);
+
+                return;
+
+            }
+
+
+
+            const maxRetries = 3;
+
+            let retryCount = 0;
+
+            let delay = 1000; // Initial delay of 1 second
+
+
+
+            while (retryCount < maxRetries) {
+
+                try {
+
+                    const response = await fetch(geminiApiUrl, {
+
+                        method: 'POST',
+
+                        headers: { 'Content-Type': 'application/json' },
+
+                        body: JSON.stringify(payload)
+
+                    });
+
+
+
+                    if (response.status === 503) {
+
+                        // If 503, log and retry
+
+                        console.warn(`Gemini API returned 503. Retrying in ${delay / 1000} seconds... (Attempt ${retryCount + 1}/${maxRetries})`);
+
+                        retryCount++;
+
+                        await new Promise(res => setTimeout(res, delay));
+
+                        delay *= 2; // Exponential backoff
+
+                        continue; // Go to the next iteration of the loop
+
+                    }
+
+
+
+                    if (!response.ok) {
+
+                        const errorText = await response.text();
+
+                        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+
+                    }
+
+
+
+                    const result = await response.json();
+
+                    const text = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+
+
+                    if (text) {
+
+                        addMessage(text, 'ai');
+
+                        speak(text);
+
+                    } else {
+
+                        addMessage("Assistant: I couldn't get a clear response from the AI. Please try again.", 'ai');
+
+                        speak("I couldn't get a clear response from the AI. Please try again.");
+
+                        console.error("Unexpected API response structure or no text content:", result);
+
+                    }
+
+                    return; // Exit function if successful
+
+                } catch (error) {
+
+                    console.error("Error calling Gemini API:", error);
+
+                    if (retryCount < maxRetries - 1) {
+
+                        console.warn(`Error on attempt ${retryCount + 1}. Retrying...`);
+
+                        retryCount++;
+
+                        await new Promise(res => setTimeout(res, delay));
+
+                        delay *= 2;
+
+                    } else {
+
+                        addMessage(`Assistant: Sorry, I encountered an error: ${error.message}. Please try again later.`, 'ai');
+
+                        speak(`Sorry, I encountered an error: ${error.message}. Please try again later.`);
+
+                        return; // Exit after max retries
+
+                    }
+
+                }
+
+            }
+
+            // This part is reached if all retries fail without a specific error caught
+
+            addMessage("Assistant: All retries failed. The AI is currently unavailable. Please try again later.", 'ai');
+
+            speak("All retries failed. The AI is currently unavailable. Please try again later.");
+
+        }
+
+
+
+        // --- Main Send Message Function ---
+
+        async function sendMessage() {
+
+            const message = userInput.value.trim();
+
+            if (message === '') return;
+
+
+
+            addMessage(message, 'user');
+
+            userInput.value = '';
+
+
+
+            const lowerCaseMessage = message.toLowerCase();
+
+            // Refined greeting logic
+
+            if (lowerCaseMessage === "hello" || lowerCaseMessage === "hi" || lowerCaseMessage === "hi there" || lowerCaseMessage === "hey" ||
+
+                lowerCaseMessage.startsWith("hello ") || lowerCaseMessage.startsWith("hi ") || lowerCaseMessage.startsWith("hey ")) {
+
+                const response = "Hi there!";
+
+                addMessage(response, 'ai');
+
+                speak(response);
+
+            } else if (lowerCaseMessage.includes("how are you")) {
+
+                const response = "I'm just a program, but I'm doing great!";
+
+                addMessage(response, 'ai');
+
+                speak(response);
+
+            } else if (lowerCaseMessage.includes("recommend a movie")) {
+
+                const response = "I recommend 'The Shawshank Redemption'. It's a classic!";
+
+                addMessage(response, 'ai');
+
+                speak(response);
+
+            } else if (lowerCaseMessage.includes("what is your name") || lowerCaseMessage.includes("whats your name")) {
+
+                const response = "My name is Shinobu, I was created to chat with you to help.";
+
+                addMessage(response, 'ai');
+
+                speak(response);
+
+            } else if (lowerCaseMessage.includes("current time") || lowerCaseMessage.includes("time now")) {
+
+                const now = new Date();
+
+                const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+                const response = `The current time is ${timeString}.`;
+
+                addMessage(response, 'ai');
+
+                speak(response);
+
+            } else if (lowerCaseMessage.includes("current location") || lowerCaseMessage.includes("where are you")) {
+
+                const response = "I am currently running in Panchkula, Haryana, India.";
+
+                addMessage(response, 'ai');
+
+                speak(response);
+
+            } else if (lowerCaseMessage.includes("quit") || lowerCaseMessage.includes("bye") || lowerCaseMessage.includes("exit")) {
+
+                const response = "Goodbye! Have a great day!";
+
+                addMessage(response, 'ai');
+
+                speak(response);
+
+            } else {
+
+                await getGeminiResponse(message);
+
+            }
+
+        }
+
+
+
+        // --- Event Listeners ---
+
+        sendButton.addEventListener('click', sendMessage);
+
+        userInput.addEventListener('keypress', (event) => {
+
+            if (event.key === 'Enter') {
+
+                sendMessage();
+
+            }
+
+        });
+
+
+
+        // Initial welcome message
+
+        setTimeout(() => {
+
+            const initialGreeting = "Hello! I'm Shinobu. How can I help you today? You can type, click the microphone to speak, or choose a voice and language.";
+
+            addMessage(initialGreeting, 'ai');
+
+            speak(initialGreeting);
+
+        }, 500); // 500ms delay
+
+    </script>
+
 </body>
-</html>
-```
+
+</html> 
