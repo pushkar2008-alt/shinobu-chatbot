@@ -13,67 +13,85 @@
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            /* Custom background image */
-            background-image: url('Add Your Photo.jpg'); /* Ensure this file is in the same directory */
-            background-size: cover; /* Cover the entire background */
-            background-position: center; /* Center the image */
-            background-repeat: no-repeat; /* Do not repeat the image */
-            background-attachment: fixed; /* Keep background fixed when scrolling */
+            /* Fallback background image if video doesn't load or isn't supported */
+            background-image: url('Add Your Photo.jpg'); 
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
             
-            height: 100vh; /* Make body fill viewport height */
-            width: 100vw; /* Make body fill viewport width */
-            margin: 0; /* Remove default body margin */
-            display: flex; /* Use flexbox for centering */
-            align-items: center; /* Center vertically */
-            justify-content: center; /* Center horizontally */
-            padding: 0; /* Remove default body padding */
+            height: 100vh;
+            width: 100vw;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            overflow: hidden; /* Prevent body scrollbars if video overflows slightly */
         }
+        
+        /* Styles for the background video */
+        .background-video {
+            position: fixed;
+            right: 0;
+            bottom: 0;
+            min-width: 100%; 
+            min-height: 100%;
+            width: auto;
+            height: auto;
+            z-index: -1; /* Ensures it's behind other content */
+            object-fit: cover; /* Ensures the video covers the entire area */
+            background-size: cover; /* Fallback for browsers that don't support object-fit */
+        }
+
         .chat-container {
-            max-width: 90vw; /* Increased max-width for wider screen */
-            width: 100%; /* Ensure it takes full width within max-width */
-            height: 95vh; /* Make it take almost full viewport height */
+            max-width: 90vw;
+            width: 100%;
+            height: 95vh;
             display: flex;
             flex-direction: column;
-            border-radius: 1.5rem; /* More rounded corners */
+            border-radius: 1.5rem;
             overflow: hidden;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); /* Soft shadow */
-            background-color: rgba(255, 255, 255, 0.9); /* Slightly transparent white background for readability */
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            background-color: rgba(255, 255, 255, 0.7); /* Adjusted transparency here */
+            position: relative; /* Ensure it's above the video */
+            z-index: 1; /* Ensure it's above the video */
         }
         .chat-messages {
             flex-grow: 1;
             overflow-y: auto;
             padding: 1.5rem;
-            background-color: #ffffff;
+            background-color: rgba(255, 255, 255, 0.7); /* Made transparent to match chat-container */
             border-bottom: 1px solid #e2e8f0;
-            scroll-behavior: smooth; /* Smooth scrolling for new messages */
+            scroll-behavior: smooth;
         }
         .message-bubble {
             max-width: 80%;
             padding: 0.75rem 1rem;
-            border-radius: 1.25rem; /* Rounded bubbles */
+            border-radius: 1.25rem;
             margin-bottom: 0.75rem;
             line-height: 1.4;
             word-wrap: break-word;
         }
         .user-message {
-            background-color: #3b82f6; /* Blue for user */
+            background-color: #3b82f6;
             color: white;
             align-self: flex-end;
-            margin-left: auto; /* Push to right */
-            border-bottom-right-radius: 0.5rem; /* Sharper corner on one side */
+            margin-left: auto;
+            border-bottom-right-radius: 0.5rem;
         }
         .ai-message {
-            background-color: #e2e8f0; /* Light gray for AI */
+            background-color: #e2e8f0;
             color: #333;
             align-self: flex-start;
-            margin-right: auto; /* Push to left */
-            border-bottom-left-radius: 0.5rem; /* Sharper corner on one side */
+            margin-right: auto;
+            border-bottom-left-radius: 0.5rem;
         }
         .input-area {
-            background-color: #f8fafc; /* Lighter gray for input area */
+            background-color: rgba(248, 250, 252, 0.7); /* Made transparent to match chat-container */
             padding: 1rem 1.5rem;
             display: flex;
-            flex-wrap: wrap; /* Allow items to wrap */
+            flex-wrap: wrap;
             align-items: center;
             gap: 0.75rem;
             border-top: 1px solid #e2e8f0;
@@ -86,8 +104,7 @@
             outline: none;
             font-size: 1rem;
             transition: border-color 0.2s;
-            /* Removed min-width to allow more flexibility on small screens */
-            width: 100%; /* Ensure it takes full width when wrapped */
+            width: 100%;
         }
         .input-area input[type="text"]:focus {
             border-color: #3b82f6;
@@ -113,62 +130,73 @@
             transform: translateY(0);
         }
         .mic-button {
-            background-color: #ef4444; /* Red for mic */
+            background-color: #ef4444;
         }
         .mic-button:hover {
             background-color: #dc2626;
         }
         .mic-button.recording {
-            background-color: #10b981; /* Green when recording */
+            background-color: #10b981;
         }
         .mute-button {
-            background-color: #60a5fa; /* Light blue for mute */
+            background-color: #60a5fa;
         }
         .mute-button:hover {
             background-color: #3b82f6;
         }
         .mute-button.muted {
-            background-color: #94a3b8; /* Gray when muted */
+            background-color: #94a3b8;
         }
         .mute-button.muted:hover {
             background-color: #64748b;
         }
-        .voice-select-container, .language-select-container {
-            width: 100%; /* Take full width on a new line */
+        .language-select-container {
+            width: 100%;
             margin-top: 0.5rem;
             display: flex;
             align-items: center;
             gap: 0.5rem;
         }
-        .voice-select, .language-select {
+        .language-select {
             flex-grow: 1;
             padding: 0.75rem 1rem;
             border-radius: 1.5rem;
             border: 1px solid #cbd5e1;
             outline: none;
-            font-size: 0.9rem; /* Slightly smaller font for dropdown */
+            font-size: 0.9rem;
             background-color: #ffffff;
-            appearance: none; /* Remove default arrow */
+            appearance: none;
             background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23000000%22%20d%3D%22M287%2C197.3L159.2%2C69.5c-3.2-3.2-8.4-3.2-11.6%2C0L5.4%2C197.3c-3.2%2C3.2-3.2%2C8.4%2C0%2C11.6l11.6%2C11.6c3.2%2C3.2%2C8.4%2C3.2%2C11.6%2C0l118.8-118.8l118.8%2C118.8c3.2%2C3.2%2C8.4%2C3.2%2C11.6%2C0l11.6-11.6C290.2%2C205.7%2C290.2%2C200.5%2C287%2C197.3z%22%2F%3E%3C%2Fsvg%3E');
             background-repeat: no-repeat;
             background-position: right 0.7rem top 50%;
             background-size: 0.65rem auto;
-            padding-right: 2.5rem; /* Make space for the custom arrow */
+            padding-right: 2.5rem;
         }
-        .voice-select:focus, .language-select:focus {
+        .language-select:focus {
             border-color: #3b82f6;
         }
         .mic-unsupported-message {
-            display: none; /* Hidden by default */
+            display: none;
             text-align: center;
             padding-top: 0.5rem;
             font-size: 0.85rem;
-            color: #ef4444; /* Red color for error message */
+            color: #ef4444;
             width: 100%;
         }
     </style>
 </head>
 <body class="flex items-center justify-center min-h-screen">
+    <!-- Background Video -->
+    <video autoplay loop muted playsinline class="background-video" poster="Add Your Photo.jpg" onerror="console.error('Video failed to load. Please ensure the video file is in the correct path and is not corrupted.');">
+        <!-- IMPORTANT: To decrease the *file size* of the wallpaper, you MUST OPTIMIZE the video file itself. -->
+        <!-- This means reducing its resolution (e.g., to 720p or 480p) and compressing it using video editing software. -->
+        <!-- The CSS below already ensures it covers the screen visually. -->
+        <!-- For best compatibility and performance, you can provide both .webm and .mp4 formats: -->
+        <!-- <source src="shinobu-insect-hashira-kimetsu-no-yaiba-moewalls-com.webm" type="video/webm"> -->
+        <source src="shinobu-insect-hashira-kimetsu-no-yaiba-moewalls-com.mp4" type="video/mp4">
+        Your browser does not support the video tag.
+    </video>
+
     <div class="chat-container bg-white shadow-lg rounded-3xl">
         <!-- Chat Header -->
         <div class="bg-gradient-to-r from-blue-500 to-indigo-600 text-white p-4 text-center text-2xl font-bold rounded-t-3xl shadow-md">
@@ -209,14 +237,7 @@
                     <!-- Options will be populated by JavaScript -->
                 </select>
             </div>
-
-            <!-- Voice Selection Dropdown -->
-            <div class="voice-select-container">
-                <label for="voice-select" class="sr-only">Select Voice:</label>
-                <select id="voice-select" class="voice-select">
-                    <!-- Options will be populated by JavaScript -->
-                </select>
-            </div>
+            <!-- Removed the voice-select-container as per user request -->
         </div>
     </div>
 
@@ -228,18 +249,18 @@
         const micButton = document.getElementById('mic-button');
         const muteButton = document.getElementById('mute-button');
         const loadingIndicator = document.getElementById('loading-indicator');
-        const voiceSelect = document.getElementById('voice-select');
         const languageSelect = document.getElementById('language-select');
-        const micUnsupportedMessage = document.getElementById('mic-unsupported-message'); // Reference to the new message div
+        const micUnsupportedMessage = document.getElementById('mic-unsupported-message');
 
         // Global state for mute and voice selection
         let isMuted = false;
         let currentSelectedVoice = null;
-        let currentSelectedLanguage = 'en-US';
+        let currentSelectedLanguage = 'en-US'; // Default to English (US)
 
-        // Gemini API configuration
-        const apiKey = "AIzaSyAzKuU7MUJbYxfQB31vpR6QNiVU_7Yps7U"; // User's provided API key
-        const geminiApiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+        // --- Frontend API Endpoint (points to your Flask backend) ---
+        // IMPORTANT: If running locally, keep this as http://127.0.0.1:5000/chat
+        // If you deploy your Flask app, you'll replace this with your deployed URL (e.g., https://your-app-name.render.com/chat)
+        const BACKEND_CHAT_URL = 'http://127.0.0.1:5000/chat'; 
 
         // --- Speech Recognition (for listening to user) ---
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -294,25 +315,24 @@
                 }
             });
         } else {
-            micButton.style.display = 'none'; // Hide mic button if not supported
-            micUnsupportedMessage.style.display = 'block'; // Show the unsupported message
+            micButton.style.display = 'none';
+            micUnsupportedMessage.style.display = 'block';
             console.warn("Web Speech API is not supported in this browser.");
         }
 
         // --- Text-to-Speech (for AI speaking) ---
         const synth = window.speechSynthesis;
-        let allVoices = []; // Store all voices
+        let allVoices = [];
 
         function populateLanguageAndVoiceLists() {
             allVoices = synth.getVoices().sort((a, b) => a.name.localeCompare(b.name));
             
             // Populate Language Dropdown
             const uniqueLanguages = [...new Set(allVoices.map(voice => voice.lang))];
-            languageSelect.innerHTML = ''; // Clear existing language options
+            languageSelect.innerHTML = '';
             uniqueLanguages.forEach(langCode => {
                 const option = document.createElement('option');
                 option.value = langCode;
-                // Display a more readable language name if possible, otherwise just the code
                 option.textContent = new Intl.DisplayNames(['en'], { type: 'language' }).of(langCode) || langCode;
                 if (langCode === currentSelectedLanguage) {
                     option.selected = true;
@@ -320,69 +340,45 @@
                 languageSelect.appendChild(option);
             });
 
-            // Now populate Voice Dropdown based on selected language
-            populateVoiceList();
+            // Set the specific voice after languages are populated
+            setSpecificVoice();
         }
 
-        function populateVoiceList() {
-            const filteredVoices = allVoices.filter(voice => voice.lang === currentSelectedLanguage);
-            voiceSelect.innerHTML = ''; // Clear existing voice options
-            currentSelectedVoice = null; // Reset selected voice
+        function setSpecificVoice() {
+            currentSelectedVoice = null;
+            const preferredVoiceName = "Microsoft Ava Online (Natural) - English (United States)";
+            
+            const foundPreferredVoice = allVoices.find(voice => 
+                voice.name === preferredVoiceName && voice.lang === currentSelectedLanguage
+            );
 
-            for (let i = 0; i < filteredVoices.length; i++) {
-                const voice = filteredVoices[i];
-                const option = document.createElement('option');
-                option.textContent = voice.name;
-                option.value = voice.name;
-
-                // Attempt to set a default female voice for the current language
-                if (voice.lang === currentSelectedLanguage && (
-                    voice.name.toLowerCase().includes('female') ||
-                    voice.name.toLowerCase().includes('woman') ||
-                    voice.name.toLowerCase().includes('zira') ||
-                    voice.name.toLowerCase().includes('karen') ||
-                    voice.name.toLowerCase().includes('ava') ||
-                    voice.name.toLowerCase().includes('samantha')
-                ) && !currentSelectedVoice) {
-                    option.selected = true;
-                    currentSelectedVoice = voice;
-                } else if (voice.default && !currentSelectedVoice) { // Fallback to default voice in this language
-                    option.selected = true;
-                    currentSelectedVoice = voice;
+            if (foundPreferredVoice) {
+                currentSelectedVoice = foundPreferredVoice;
+            } else {
+                const fallbackVoiceForLang = allVoices.find(voice => voice.lang === currentSelectedLanguage);
+                if (fallbackVoiceForLang) {
+                    currentSelectedVoice = fallbackVoiceForLang;
+                } else if (allVoices.length > 0) {
+                    currentSelectedVoice = allVoices[0];
                 }
-                voiceSelect.appendChild(option);
             }
 
-            // If no specific voice was selected by the logic above, and there are voices in this language, pick the first one
-            if (!currentSelectedVoice && filteredVoices.length > 0) {
-                currentSelectedVoice = filteredVoices[0];
-                voiceSelect.value = filteredVoices[0].name;
-            } else if (filteredVoices.length === 0) {
-                // If no voices for the selected language, clear currentSelectedVoice
-                currentSelectedVoice = null;
+            if (currentSelectedVoice) {
+                console.log("Voice set to:", currentSelectedVoice.name, "for language:", currentSelectedLanguage);
+            } else {
+                console.warn("No suitable voice found for the selected language or default fallback.");
             }
         }
 
-        // Populate voices and languages immediately and listen for changes
         populateLanguageAndVoiceLists();
         if (synth.onvoiceschanged !== undefined) {
             synth.onvoiceschanged = populateLanguageAndVoiceLists;
         }
 
-        // Event listener for language selection change
         languageSelect.addEventListener('change', () => {
             currentSelectedLanguage = languageSelect.value;
-            populateVoiceList(); // Repopulate voices for the new language
+            setSpecificVoice();
             console.log("Language changed to:", currentSelectedLanguage);
-        });
-
-        // Event listener for voice selection change
-        voiceSelect.addEventListener('change', () => {
-            const selectedVoiceName = voiceSelect.value;
-            currentSelectedVoice = allVoices.find(voice => voice.name === selectedVoiceName && voice.lang === currentSelectedLanguage);
-            if (currentSelectedVoice) {
-                console.log("Voice changed to:", currentSelectedVoice.name);
-            }
         });
 
         function speak(text) {
@@ -393,17 +389,15 @@
             if (synth.speaking) {
                 synth.cancel();
             }
-            // Remove common Markdown characters and emojis for cleaner speech
             const emojiRegex = /(\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff])/g;
             const cleanedText = text.replace(/[\*_#`]/g, '').replace(emojiRegex, '');
 
             const utterance = new SpeechSynthesisUtterance(cleanedText);
-            utterance.lang = currentSelectedLanguage; // Set the language for the utterance
+            utterance.lang = currentSelectedLanguage;
 
             if (currentSelectedVoice) {
                 utterance.voice = currentSelectedVoice;
             } else {
-                // Fallback if no specific voice is selected (should be rare with proper initialization)
                 const fallbackVoice = allVoices.find(voice => voice.lang === currentSelectedLanguage) || allVoices[0];
                 if (fallbackVoice) {
                     utterance.voice = fallbackVoice;
@@ -441,133 +435,47 @@
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
 
-        // --- Gemini API Call ---
-        async function getGeminiResponse(prompt) {
-            loadingIndicator.style.display = 'block';
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-
-            let chatHistory = [];
-            chatHistory.push({ role: "user", parts: [{ text: prompt }] });
-
-            const payload = {
-                contents: chatHistory,
-                generationConfig: {
-                    temperature: 0.7,
-                    topK: 40,
-                    topP: 0.95,
-                    maxOutputTokens: 500
-                }
-            };
-
-            if (!apiKey || apiKey === "") {
-                const errorMessage = "Error: Gemini API key is not set. Please paste your key into the code.";
-                addMessage(`Assistant: ${errorMessage}`, 'ai');
-                speak(errorMessage);
-                loadingIndicator.style.display = 'none';
-                console.error(errorMessage);
-                return;
-            }
-
-            const maxRetries = 3;
-            let retryCount = 0;
-            let delay = 1000; // Initial delay of 1 second
-
-            while (retryCount < maxRetries) {
-                try {
-                    const response = await fetch(geminiApiUrl, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-
-                    if (response.status === 503) {
-                        // If 503, log and retry
-                        console.warn(`Gemini API returned 503. Retrying in ${delay / 1000} seconds... (Attempt ${retryCount + 1}/${maxRetries})`);
-                        retryCount++;
-                        await new Promise(res => setTimeout(res, delay));
-                        delay *= 2; // Exponential backoff
-                        continue; // Go to the next iteration of the loop
-                    }
-
-                    if (!response.ok) {
-                        const errorText = await response.text();
-                        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
-                    }
-
-                    const result = await response.json();
-                    const text = result?.candidates?.[0]?.content?.parts?.[0]?.text;
-
-                    if (text) {
-                        addMessage(text, 'ai');
-                        speak(text);
-                    } else {
-                        addMessage("Assistant: I couldn't get a clear response from the AI. Please try again.", 'ai');
-                        speak("I couldn't get a clear response from the AI. Please try again.");
-                        console.error("Unexpected API response structure or no text content:", result);
-                    }
-                    return; // Exit function if successful
-                } catch (error) {
-                    console.error("Error calling Gemini API:", error);
-                    if (retryCount < maxRetries - 1) {
-                        console.warn(`Error on attempt ${retryCount + 1}. Retrying...`);
-                        retryCount++;
-                        await new Promise(res => setTimeout(res, delay));
-                        delay *= 2;
-                    } else {
-                        addMessage(`Assistant: Sorry, I encountered an error: ${error.message}. Please try again later.`, 'ai');
-                        speak(`Sorry, I encountered an error: ${error.message}. Please try again later.`);
-                        return; // Exit after max retries
-                    }
-                }
-            }
-            // This part is reached if all retries fail without a specific error caught
-            addMessage("Assistant: All retries failed. The AI is currently unavailable. Please try again later.", 'ai');
-            speak("All retries failed. The AI is currently unavailable. Please try again later.");
-        }
-
-        // --- Main Send Message Function ---
+        // --- Send Message to Python Backend ---
         async function sendMessage() {
             const message = userInput.value.trim();
             if (message === '') return;
 
             addMessage(message, 'user');
             userInput.value = '';
+            loadingIndicator.style.display = 'block';
+            chatMessages.scrollTop = chatMessages.scrollHeight;
 
-            const lowerCaseMessage = message.toLowerCase();
-            // Refined greeting logic
-            if (lowerCaseMessage === "hello" || lowerCaseMessage === "hi" || lowerCaseMessage === "hi there" || lowerCaseMessage === "hey" ||
-                lowerCaseMessage.startsWith("hello ") || lowerCaseMessage.startsWith("hi ") || lowerCaseMessage.startsWith("hey ")) {
-                const response = "Hi there!";
-                addMessage(response, 'ai');
-                speak(response);
-            } else if (lowerCaseMessage.includes("how are you")) {
-                const response = "I'm just a program, but I'm doing great!";
-                addMessage(response, 'ai');
-                speak(response);
-            } else if (lowerCaseMessage.includes("recommend a movie")) {
-                const response = "I recommend 'The Shawshank Redemption'. It's a classic!";
-                addMessage(response, 'ai');
-                speak(response);
-            } else if (lowerCaseMessage.includes("what is your name") || lowerCaseMessage.includes("whats your name")) {
-                const response = "My name is Shinobu, I was created to chat with you to help.";
-                addMessage(response, 'ai');
-                speak(response);
-            } else if (lowerCaseMessage.includes("current time") || lowerCaseMessage.includes("time now")) {
-                const now = new Date();
-                const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                const response = `The current time is ${timeString}.`;
-                addMessage(response, 'ai');
-                speak(response);
-            } else if (lowerCaseMessage.includes("current location") || lowerCaseMessage.includes("where are you")) {
-                const response = "I am currently running in Panchkula, Haryana, India.";
-                addMessage(response, 'ai');
-                speak(response);
-            } else if (lowerCaseMessage.includes("quit") || lowerCaseMessage.includes("bye") || lowerCaseMessage.includes("exit")) {
-                const response = "Goodbye! Have a great day!";
-                addMessage(response, 'ai');
-                speak(response);
-            } else {
-                await getGeminiResponse(message);
+            try {
+                const response = await fetch(BACKEND_CHAT_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ message: message })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(`Backend error! Status: ${response.status}, Message: ${errorData.error || 'Unknown error'}`);
+                }
+
+                const result = await response.json();
+                const aiResponseText = result.response;
+
+                if (aiResponseText) {
+                    addMessage(aiResponseText, 'ai');
+                    speak(aiResponseText);
+                } else {
+                    addMessage("Assistant: I couldn't get a clear response from the AI. Please try again.", 'ai');
+                    speak("I couldn't get a clear response from the AI. Please try again.");
+                    console.error("Unexpected backend response structure or no text content:", result);
+                }
+            } catch (error) {
+                console.error("Error communicating with backend:", error);
+                addMessage(`Assistant: Sorry, I encountered an error communicating with the backend: ${error.message}. Please ensure the Python server is running.`, 'ai');
+                speak(`Sorry, I encountered an error communicating with the backend: ${error.message}. Please ensure the Python server is running.`);
+            } finally {
+                loadingIndicator.style.display = 'none';
             }
         }
 
@@ -581,7 +489,7 @@
 
         // Initial welcome message
         setTimeout(() => {
-            const initialGreeting = "Hello! I'm Shinobu. How can I help you today? You can type, click the microphone to speak, or choose a voice and language.";
+            const initialGreeting = "Hello! I'm Shinobu. How can I help you today? You can type or click the microphone to speak.";
             addMessage(initialGreeting, 'ai');
             speak(initialGreeting);
         }, 500); // 500ms delay
