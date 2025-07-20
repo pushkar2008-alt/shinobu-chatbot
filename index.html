@@ -1,14 +1,18 @@
+I can certainly provide you with the full, updated HTML code for your Shinobu AI Assistant, including the chat history saving and loading functionality.
+
+Here's the complete `index.html` file:
+
+-----
+
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Shinobu AI Assistant</title>
-    <!-- Tailwind CSS CDN for easy styling -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Inter font from Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <!-- Lucide Icons for the microphone and speaker -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         body {
@@ -186,34 +190,23 @@
     </style>
 </head>
 <body class="flex items-center justify-center min-h-screen">
-    <!-- Background Video -->
     <video autoplay loop muted playsinline class="background-video" poster="Add Your Photo.jpg" onerror="console.error('Video failed to load. Please ensure the video file is in the correct path and is not corrupted.');">
-        <!-- IMPORTANT: To decrease the *file size* of the wallpaper, you MUST OPTIMIZE the video file itself. -->
-        <!-- This means reducing its resolution (e.g., to 720p or 480p) and compressing it using video editing software. -->
-        <!-- The CSS below already ensures it covers the screen visually. -->
-        <!-- For best compatibility and performance, you can provide both .webm and .mp4 formats: -->
-        <!-- <source src="shinobu-insect-hashira-kimetsu-no-yaiba-moewalls-com.webm" type="video/webm"> -->
         <source src="background-video.mp4" type="video/mp4">
         Your browser does not support the video tag.
     </video>
 
     <div class="chat-container bg-white shadow-lg rounded-3xl">
-        <!-- Chat Header -->
         <div class="bg-gradient-to-r from-blue-500 to-indigo-600 text-white p-4 text-center text-2xl font-bold rounded-t-3xl shadow-md">
             Shinobu AI Assistant
         </div>
 
-        <!-- Chat Messages Display Area -->
         <div id="chat-messages" class="chat-messages flex flex-col">
-            <!-- Messages will be appended here by JavaScript -->
-        </div>
+            </div>
 
-        <!-- Loading Indicator -->
         <div id="loading-indicator" class="loading-indicator">
             Shinobu is thinking...
         </div>
 
-        <!-- Input Area -->
         <div class="input-area">
             <input type="text" id="user-input" placeholder="Type your message...">
             <button id="send-button">
@@ -225,19 +218,15 @@
             <button id="mute-button" class="mute-button">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-volume-2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M23.31 1.69a16 16 0 0 1 0 22.62"/></svg>
             </button>
-            <!-- Message for unsupported microphone -->
             <div id="mic-unsupported-message" class="mic-unsupported-message">
                 Microphone input not supported on this device/browser.
             </div>
 
-            <!-- Language Selection Dropdown -->
             <div class="language-select-container">
                 <label for="language-select" class="sr-only">Select Language:</label>
                 <select id="language-select" class="language-select">
-                    <!-- Options will be populated by JavaScript -->
-                </select>
+                    </select>
             </div>
-            <!-- Removed the voice-select-container as per user request -->
         </div>
     </div>
 
@@ -256,6 +245,7 @@
         let isMuted = false;
         let currentSelectedVoice = null;
         let currentSelectedLanguage = 'en-US'; // Default to English (US)
+        let chatHistory = []; // Array to store chat messages
 
         // --- Frontend API Endpoint (points to your Flask backend) ---
         // IMPORTANT: If running locally, keep this as http://127.0.0.1:5000/chat
@@ -433,7 +423,56 @@
             messageDiv.textContent = text;
             chatMessages.appendChild(messageDiv);
             chatMessages.scrollTop = chatMessages.scrollHeight;
+
+            // Add message to history
+            chatHistory.push({ text: text, sender: sender });
+            saveChatHistory(); // Save history every time a message is added
         }
+
+        // --- Save/Load Chat History ---
+        const CHAT_HISTORY_KEY = 'shinobuChatHistory';
+
+        function saveChatHistory() {
+            try {
+                localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(chatHistory));
+                console.log("Chat history saved to localStorage.");
+            } catch (e) {
+                console.error("Error saving chat history to localStorage:", e);
+                // Handle cases where localStorage might be full or unavailable
+                alert("Your browser's storage is full. Chat history may not be saved.");
+            }
+        }
+
+        function loadChatHistory() {
+            try {
+                const storedHistory = localStorage.getItem(CHAT_HISTORY_KEY);
+                if (storedHistory) {
+                    chatHistory = JSON.parse(storedHistory);
+                    console.log("Chat history loaded from localStorage.");
+                    // Re-render messages from history
+                    chatHistory.forEach(msg => {
+                        const messageDiv = document.createElement('div');
+                        messageDiv.classList.add('message-bubble');
+                        if (msg.sender === 'user') {
+                            messageDiv.classList.add('user-message');
+                        } else {
+                            messageDiv.classList.add('ai-message');
+                        }
+                        messageDiv.textContent = msg.text;
+                        chatMessages.appendChild(messageDiv);
+                    });
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                } else {
+                    console.log("No chat history found in localStorage.");
+                }
+            } catch (e) {
+                console.error("Error loading chat history from localStorage:", e);
+                // If there's an error parsing, clear potentially corrupted data
+                localStorage.removeItem(CHAT_HISTORY_KEY);
+                chatHistory = []; // Reset history
+            }
+        }
+
 
         // --- Send Message to Python Backend ---
         async function sendMessage() {
@@ -487,12 +526,23 @@
             }
         });
 
-        // Initial welcome message
-        setTimeout(() => {
-            const initialGreeting = "Hello! I'm Shinobu. How can I help you today? You can type or click the microphone to speak.";
-            addMessage(initialGreeting, 'ai');
-            speak(initialGreeting);
-        }, 500); // 500ms delay
+        // --- Initial setup ---
+        // Load chat history when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            loadChatHistory();
+            // Only show the initial greeting if there's no chat history
+            if (chatHistory.length === 0) {
+                setTimeout(() => {
+                    const initialGreeting = "Hello! I'm Shinobu. How can I help you today? You can type or click the microphone to speak.";
+                    addMessage(initialGreeting, 'ai');
+                    speak(initialGreeting);
+                }, 500); // 500ms delay
+            } else {
+                // If history exists, scroll to the bottom immediately and don't speak initial greeting
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+        });
     </script>
 </body>
 </html>
+```
